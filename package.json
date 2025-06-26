@@ -1,0 +1,65 @@
+{
+  "name": "kafka-node-pipeline",
+  "version": "1.0.0",
+  "description": "TypeScript Node.js Kafka producer and consumer pipeline",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start:producer": "node dist/producer.js",
+    "start:consumer": "node dist/consumer.js",
+    "start:api": "node dist/api.js",
+    "cli:produce": "node dist/cli-producer.js",
+    "dev:producer": "tsx src/producer.ts",
+    "dev:consumer": "tsx src/consumer.ts",
+    "dev:api": "tsx watch src/api.ts",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:consumer\"",
+    "clean": "rm -rf dist",
+    "prestart": "npm run build",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "test": "jest",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "express": "^4.18.2",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "commander": "^11.1.0",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.2",
+    "tsx": "^4.6.0",
+    "concurrently": "^8.2.2",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.8",
+    "ts-jest": "^29.1.1"
+  },
+  "keywords": [
+    "kafka",
+    "nodejs",
+    "typescript",
+    "streaming",
+    "docker",
+    "kraft"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
