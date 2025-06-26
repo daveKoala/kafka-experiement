@@ -1,32 +1,8 @@
 import { Producer, ProducerRecord, RecordMetadata } from "kafkajs";
+import type { LogEntry, Metric, ProducerStats } from "./types";
 import { kafka, TOPICS } from "./config/kafka";
 import { logger } from "./config/logger";
 import * as os from "os";
-
-export interface LogEntry {
-  timestamp: string;
-  level: "info" | "warn" | "error" | "debug";
-  message: string;
-  service: string;
-  metadata: Record<string, any>;
-}
-
-export interface Metric {
-  timestamp: string;
-  name: string;
-  value: number;
-  tags: Record<string, any>;
-}
-
-export interface ProducerStats {
-  totalMessagesSent: number;
-  messagesByTopic: Record<string, number>;
-  messagesByLevel: Record<string, number>;
-  errors: number;
-  lastMessageSent: string | null;
-  uptime: number;
-  isConnected: boolean;
-}
 
 export class LogProducer {
   private producer: Producer;

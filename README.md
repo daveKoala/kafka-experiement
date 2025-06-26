@@ -1,5 +1,7 @@
 # Kafka Node.js Pipeline with KRaft
 
+**See the Idiot Guide for a simpler version**
+
 A modern streaming data pipeline using Apache Kafka in KRaft mode (no ZooKeeper), Node.js with TypeScript, and Docker.
 
 ## 🚀 Features
@@ -303,4 +305,5 @@ docker-compose up --scale consumer=3
 ## 📄 License
 
 MIT License - see LICENSE file for details.
+
 # kafka-experiement
