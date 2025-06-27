@@ -5,4 +5,6 @@ const router = Router();
 
 router.get("/demo", producer.sendDemo);
 
+router.get("/status", producer.getKafkaStatus);
+
 export default router;

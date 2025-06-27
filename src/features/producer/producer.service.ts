@@ -1,21 +1,18 @@
 import type { Request, Response } from "express";
-import type { Config } from "./types";
-import KafkaProducerService from "./KafkaProducerService";
+import type { KafkaConfig } from "./types";
+import { KafkaService } from "./KafkaService";
 
-const kafkaConfig: Config = {
-  thisAppsName: "my-awesome-app",
+const kafkaConfig: KafkaConfig = {
   brokersCSV: "localhost:9092",
+  clientId: "my-awesome-app",
   connectionTimeout: 3000,
-  authenticationTimeout: 1000,
-  reauthenticationThreshold: 1000,
-  retry: {
-    initialRetryTime: 100,
-    retries: 10,
-  },
+  lingerMs: 1000,
+  batchSize: 4,
+  retries: 10,
 };
 
-// Singleton of Kafka Producer Class
-const kafkaService = new KafkaProducerService(kafkaConfig);
+// Singleton of Kafka Service Class
+const kafkaService = new KafkaService(kafkaConfig);
 
 // GRACEFUL SHUTDOWN
 process.on("SIGINT", async () => {
@@ -24,15 +21,15 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-export const sendDemo = async (_req: Request, resp: Response) => {
+export const sendDemo = async (req: Request, resp: Response) => {
   try {
     const result = await kafkaService.sendMetric({
       name: "api_request",
       value: 1,
       userId: "user-123",
       metadata: {
-        endpoint: "/demo",
-        method: "POST",
+        endpoint: req.url,
+        method: req.method,
       },
     });
 
@@ -48,5 +45,14 @@ export const sendDemo = async (_req: Request, resp: Response) => {
       success: false,
       error: message,
     });
+  }
+};
+
+export const getKafkaStatus = async (_req: Request, resp: Response) => {
+  try {
+    resp.status(200).json(kafkaService.getStatus());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    resp.status(400).json({ message });
   }
 };
