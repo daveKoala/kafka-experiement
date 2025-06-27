@@ -110,3 +110,33 @@ export interface ProducerStats {
   /** Whether the producer is currently connected to Kafka */
   isConnected: boolean;
 }
+
+export interface ConsumerStats {
+  totalMessagesProcessed: number;
+  messagesByTopic: Record<string, number>;
+  messagesByLevel: Record<string, number>;
+  processingErrors: number;
+  lastMessageProcessed: string | null;
+  uptime: number;
+  isConnected: boolean;
+  lag: Record<string, number>;
+  throughput: {
+    messagesPerSecond: number;
+    lastCalculated: string;
+  };
+}
+
+export interface ProcessingContext {
+  topic: string;
+  partition: number;
+  offset: string;
+  timestamp: string;
+  headers: Record<string, string>;
+}
+
+export interface AlertConfig {
+  errorThreshold: number;
+  warningThreshold: number;
+  responseTimeThreshold: number;
+  memoryThreshold: number;
+}
