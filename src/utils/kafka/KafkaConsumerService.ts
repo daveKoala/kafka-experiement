@@ -3,7 +3,7 @@ import type {
   MessageHandler,
   ConsumerStatus,
   KafkaConfig,
-} from "../../features/producer/types";
+} from "./types";
 import { BaseKafkaService } from "./BaseKafkaService";
 
 export class KafkaConsumerService extends BaseKafkaService {

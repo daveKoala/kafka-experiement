@@ -1,22 +1,14 @@
-import type { Request, Response } from "express";
-import type { KafkaConfig, KafkaMessage } from "./types";
 import { KafkaService } from "../../utils/kafka/KafkaService";
-
-const kafkaConfig: KafkaConfig = {
-  brokersCSV: "localhost:9092",
-  clientId: "my-awesome-app",
-  connectionTimeout: 3000,
-  lingerMs: 1000,
-  batchSize: 4,
-  retries: 10,
-};
+import { kafkaConfig } from "../../utils/kafka/configCommon";
+import type { KafkaMessage } from "../../utils/kafka/types";
+import type { Request, Response } from "express";
 
 // Singleton of Kafka Service Class
-const kafkaService = new KafkaService(kafkaConfig);
+const kafkaService = new KafkaService(kafkaConfig());
 
 // GRACEFUL SHUTDOWN
 process.on("SIGINT", async () => {
-  console.log("🛑 Shutting down Kafka producer...");
+  console.log("🛑 Shutting down Kafka producer");
   await kafkaService.disconnect();
   process.exit(0);
 });

@@ -6,7 +6,7 @@ import type {
   KafkaMessage,
   KafkaConfig,
   MetricData,
-} from "../../features/producer/types";
+} from "./types";
 
 export class KafkaService {
   private producer: KafkaProducerService;

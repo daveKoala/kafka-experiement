@@ -1,15 +1,8 @@
-import type { Request, Response } from "express";
-import express from "express";
-import morgan from "morgan";
 import ProducerRouter from "./features/producer/producer.router";
-
-const app = express();
+import type { Request, Response } from "express";
+import app from "./app";
 
 const PORT = 8081;
-
-app
-  .use(express.json())
-  .use(morgan(":method :url :status :res[content-length] - :response-time ms"));
 
 app.use("/api", ProducerRouter);
 
@@ -19,5 +12,5 @@ app.use("/*{splat}", (_req: Request, res: Response) => {
 });
 
 app.listen(PORT, async () => {
-  console.log(`Listening on port ${PORT}. http://localhost:8081`);
+  console.log(`Producer: Listening on port ${PORT}. http://localhost:${PORT}`);
 });

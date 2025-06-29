@@ -9,9 +9,9 @@
     "start:consumer": "node dist/consumer.js",
     "start:producer": "node dist/server.js",
     "start": "concurrently \"npm run start:producer\" \"npm run start:consumer\"",
-    "dev:producer": "tsx --watch src/server.ts",
-    "dev:consumer": "tsx src/consumer.ts",
-    "dev": "concurrently \"npm run dev:consumer\" \"npm run dev:producer\"",
+    "dev:producer": "nodemon --watch src --ignore src/consumer.ts --ignore \"src/consumer copy.ts\" --ext ts,js,json --exec tsx src/server.ts",
+    "dev:consumer": "nodemon --watch src/consumer.ts --watch src/config --watch src/utils/kafka --watch src/types.ts --ext ts,js,json --exec tsx src/consumer.ts",
+    "dev": "concurrently --names \"CONSUMER,PRODUCER\" --prefix-colors \"blue,green\" \"npm run dev:consumer\" \"npm run dev:producer\"",
     "clean": "rm -rf dist",
     "prestart": "npm run build",
     "lint": "eslint src/**/*.ts",
@@ -57,6 +57,6 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   }
 }

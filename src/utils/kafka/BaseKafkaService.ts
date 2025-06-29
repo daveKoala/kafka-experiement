@@ -1,5 +1,5 @@
 import { Kafka } from "kafkajs";
-import type { KafkaConfig } from "../../features/producer/types";
+import type { KafkaConfig } from "./types";
 
 // Base Kafka Service Class
 export abstract class BaseKafkaService {
