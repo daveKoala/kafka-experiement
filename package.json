@@ -11,7 +11,7 @@
     "start": "concurrently \"npm run start:producer\" \"npm run start:consumer\"",
     "dev:producer": "nodemon --watch src --ignore src/consumer.ts --ignore \"src/consumer copy.ts\" --ext ts,js,json --exec tsx src/server.ts",
     "dev:consumer": "nodemon --watch src/consumer.ts --watch src/config --watch src/utils/kafka --watch src/types.ts --ext ts,js,json --exec tsx src/consumer.ts",
-    "dev": "concurrently --names \"CONSUMER,PRODUCER\" --prefix-colors \"blue,green\" \"npm run dev:consumer\" \"npm run dev:producer\"",
+    "dev": "concurrently --names \"CONSUMER,PRODUCER\" --prefix-colors \"yellow,green\" \"npm run dev:consumer\" \"npm run dev:producer\"",
     "clean": "rm -rf dist",
     "prestart": "npm run build",
     "lint": "eslint src/**/*.ts",

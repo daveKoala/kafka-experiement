@@ -8,7 +8,7 @@ CONTENT_TYPE="Content-Type: application/json"
 PAYLOAD='[{"topic":"user-events","key":"user-123","value":{"action":"login","timestamp":"2025-06-27T10:30:00Z"},"headers":{"source":"web-app"}},{"topic":"application-metrics","key":"metric-456","value":{"name":"page_view","count":1}}]'
 
 # Number of requests
-TOTAL_REQUESTS=1000
+TOTAL_REQUESTS=100000
 
 # Maximum concurrent requests (adjust based on your system)
 MAX_CONCURRENT=50

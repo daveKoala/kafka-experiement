@@ -2,3 +2,6 @@ node_modules
 logs
 .DS_Store
 dist
+*.db
+*.db-shm
+*.db-wal

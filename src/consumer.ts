@@ -1,42 +1,106 @@
 import type { Request, Response } from "express";
 import app from "./app";
 import { KafkaService } from "./utils/kafka/KafkaService";
-import type { MessageHandler } from "./utils/kafka/types";
 import { kafkaConfig } from "./utils/kafka/configCommon";
+import { sqliteService } from "./utils/db";
+// import { messageHandler } from "./utils/consumers/writeToFile";
+import { sqliteMessageHandler as messageHandler } from "./utils/consumers/writeToDb";
 
 // Singleton of Kafka Service Class
 const kafkaServiceConsumer = new KafkaService(kafkaConfig());
 
-// GRACEFUL SHUTDOWN
+// GRACEFUL SHUTDOWN - Include SQLite cleanup
 process.on("SIGINT", async () => {
-  console.log("🛑 Shutting down Kafka producer!");
+  console.log("🛑 Shutting down services...");
   await kafkaServiceConsumer.disconnect();
+  await sqliteService.close(); // ← Add SQLite cleanup
   process.exit(0);
 });
 
-const messageHandler: MessageHandler = async (msg) => {
-  console.log("📨 Received message:", {
-    what: "ho!",
-    topic: msg.topic,
-    partition: msg.partition,
-    offset: msg.offset,
-    key: msg.key,
-    value: JSON.parse(msg.value), // Parse the JSON value
-    timestamp: msg.timestamp,
-  });
-};
+// SIGTERM handler for Docker/production environments
+process.on("SIGTERM", async () => {
+  console.log("🛑 Received SIGTERM, shutting down services...");
+  await kafkaServiceConsumer.disconnect();
+  await sqliteService.close();
+  process.exit(0);
+});
 
-kafkaServiceConsumer.startConsumer(["user-events"], messageHandler);
+// Async function to handle startup sequence
+async function startServices() {
+  try {
+    // 1. Initialize SQLite first
+    console.log("🔧 Initializing SQLite service...");
+    await sqliteService.initialize();
+
+    // 2. Start Kafka consumer
+    console.log("🔧 Starting Kafka consumer...");
+    await kafkaServiceConsumer.startConsumer(["user-events"], messageHandler);
+
+    console.log("✅ All services started successfully!");
+  } catch (error) {
+    console.error("❌ Failed to start services:", error);
+    await sqliteService.close(); // Cleanup on failure
+    process.exit(1);
+  }
+}
 
 const PORT = 8082;
 
+// Add some useful endpoints
+app.get("/health", (_req: Request, res: Response) => {
+  try {
+    const dbInitialized = sqliteService.isInitialized();
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      services: {
+        sqlite: dbInitialized ? "connected" : "disconnected",
+        kafka: kafkaServiceConsumer.getStatus(),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      error: "Health check failed",
+    });
+  }
+});
+
+app.get("/stats", (_req: Request, res: Response) => {
+  try {
+    if (!sqliteService.isInitialized()) {
+      return res.status(503).json({ error: "Database not initialized" });
+    }
+
+    const stats = sqliteService.getMessageCountByTopic();
+    const recentMessages = sqliteService.getRecentMessages(5);
+    res.json({
+      messageCountByTopic: stats,
+      recentMessages: recentMessages.map((msg) => ({
+        ...msg,
+        message_value: JSON.parse(msg.message_value), // Parse JSON for display
+      })),
+    });
+  } catch (error) {
+    console.error("Stats endpoint error:", error);
+    res.status(500).json({ error: "Failed to get stats" });
+  }
+});
+
+// Catch all - fix the route pattern
 app.use("/*{splat}", (_req: Request, res: Response) => {
-  // Catch all
-  res.statusCode = 404;
+  res.status(404).json({ error: "Not found" });
 });
 
+// Start Express server and then initialize services
 app.listen(PORT, async () => {
-  console.log(`Consumer: Listening on port ${PORT}. http://localhost:${PORT}`);
+  console.log(`🚀 Consumer server listening on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`📈 Stats: http://localhost:${PORT}/stats`);
+
+  // Start services after Express is ready
+  await startServices();
 });
 
-app.listen;
+// Remove this extra line
+// app.listen; ← Delete this
