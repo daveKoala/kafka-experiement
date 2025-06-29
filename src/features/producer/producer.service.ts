@@ -83,7 +83,10 @@ export const getKafkaStatus = async (_req: Request, resp: Response) => {
   }
 };
 
-export const batchSend = async (req: Request, res: Response) => {
+export const batchSend = async (
+  req: Request,
+  resp: Response
+): Promise<void> => {
   try {
     const messages = req.body;
 
@@ -91,7 +94,7 @@ export const batchSend = async (req: Request, res: Response) => {
 
     // Validation: Check if messages is an array
     if (!Array.isArray(messages)) {
-      return res.status(400).json({
+      resp.status(400).json({
         success: false,
         error: "Request body must be an array of messages",
       });
@@ -99,7 +102,7 @@ export const batchSend = async (req: Request, res: Response) => {
 
     // Validation: Check if array has messages
     if (messages.length === 0) {
-      return res.status(400).json({
+      resp.status(400).json({
         success: false,
         error: "Messages array cannot be empty",
       });
@@ -108,6 +111,7 @@ export const batchSend = async (req: Request, res: Response) => {
     // Group messages by topic for efficient sending
     const messagesByTopic: Record<string, KafkaMessage[]> = {};
 
+    // @ts-expect-error
     messages.forEach((msg) => {
       const topic = (msg as any).topic; // We know it has topic from validation
       if (!messagesByTopic[topic]) {
@@ -125,10 +129,12 @@ export const batchSend = async (req: Request, res: Response) => {
       Object.entries(messagesByTopic).map(sendToTopic)
     );
 
-    res.status(200).json({ messagesByTopic, validMessages, messages, results });
+    resp
+      .status(200)
+      .json({ messagesByTopic, validMessages, messages, results });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error: `batch send`";
-    res.status(400).json({ message });
+    resp.status(400).json({ message });
   }
 };

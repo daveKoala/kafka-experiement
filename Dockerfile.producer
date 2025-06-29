@@ -1,5 +1,5 @@
 # Multi-stage build for TypeScript
-FROM node:18-alpine as builder
+FROM node:24-alpine as builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine as production
+FROM node:24-alpine as production
 
 WORKDIR /app
 
