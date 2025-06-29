@@ -3,7 +3,7 @@ import type {
   KafkaMessage,
   KafkaConfig,
   MetricData,
-} from "./types";
+} from "../../features/producer/types";
 import { BaseKafkaService } from "./BaseKafkaService";
 
 //   clientId: "my-app", // Just a string identifier for the application

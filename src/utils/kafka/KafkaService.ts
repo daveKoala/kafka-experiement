@@ -6,7 +6,7 @@ import type {
   KafkaMessage,
   KafkaConfig,
   MetricData,
-} from "./types";
+} from "../../features/producer/types";
 
 export class KafkaService {
   private producer: KafkaProducerService;
@@ -24,6 +24,10 @@ export class KafkaService {
 
   async sendMessage(topic: string, message: KafkaMessage): Promise<any> {
     return this.producer.sendMessage(topic, message);
+  }
+
+  async sendBatch(topic: string, messages: KafkaMessage[]): Promise<any> {
+    return this.producer.sendBatch(topic, messages);
   }
 
   // Consumer methods

@@ -7,4 +7,6 @@ router.get("/demo", producer.sendDemo);
 
 router.get("/status", producer.getKafkaStatus);
 
+router.post("/batch", producer.batchSend);
+
 export default router;
