@@ -121,6 +121,9 @@ export const batchSend = async (
       Object.entries(messagesByTopic).map(sendToTopic)
     );
 
+    // Need to catch and bad requests to broker. E.g.
+    // {"level":"ERROR","timestamp":"2025-06-29T04:37:48.530Z","logger":"kafkajs","message":"[Connection] Response Metadata(key: 3, version: 6)","broker":"localhost:9092","clientId":"my-awesome-app","error":"The request attempted to perform an operation on an invalid topic","correlationId":25,"size":209}
+
     resp
       .status(200)
       .json({ messagesByTopic, validMessages, messages, results });
