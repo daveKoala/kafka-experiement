@@ -1,12 +1,8 @@
-import type { Request, Response } from "express";
-import app from "./app";
+import { createMessageHandler } from "./utils/handlers/handlerSelector";
 import { KafkaService } from "./utils/kafka/KafkaService";
 import { kafkaConfig } from "./utils/kafka/configCommon";
-import { sqliteService } from "./utils/localDB/db";
-// import { messageHandler } from "./utils/consumers/writeToFile";
-// import { sqliteMessageHandler as messageHandler } from "./utils/consumers/writeToDb";
-import { elasticSearchMessageHandler as messageHandler } from "./utils/consumers/elasticSearch";
-import { esInfo, esClient } from "./utils/elasticDB/db";
+import type { Request, Response } from "express";
+import app from "./app";
 
 // We need some sort of factory pattern here that starts kafka AND adds the desired message handler with connections etc
 
@@ -16,12 +12,19 @@ const kafkaServiceConsumer = new KafkaService(
   "log-processing-group"
 );
 
+const HANDLER_TYPE = process.env.MESSAGE_HANDLER || "sqlite";
+
+let messageHandler: any = null;
+
 // GRACEFUL SHUTDOWN - Include SQLite cleanup
 process.on("SIGINT", async () => {
   console.log("🛑 Shutting down services");
   await kafkaServiceConsumer.disconnect();
-  await sqliteService.close(); // Add SQLite cleanup
-  await esClient.close(); // Close Elastic search connection
+
+  if (messageHandler && typeof messageHandler.cleanup === "function") {
+    await messageHandler.cleanup();
+  }
+
   process.exit(0);
 });
 
@@ -29,28 +32,31 @@ process.on("SIGINT", async () => {
 process.on("SIGTERM", async () => {
   console.log("🛑 Received SIGTERM, shutting down services...");
   await kafkaServiceConsumer.disconnect();
-  await sqliteService.close();
-  await esClient.close(); // Close Elastic search connection
+
+  if (messageHandler && typeof messageHandler.cleanup === "function") {
+    await messageHandler.cleanup();
+  }
+
   process.exit(0);
 });
 
 // Async function to handle startup sequence
 async function startServices() {
   try {
-    // 1. Initialize SQLite first
-    console.log("🔧 Initializing SQLite service...");
-    await sqliteService.initialize();
+    // Message handler
+    console.log(`🚀 Starting services with ${HANDLER_TYPE} handler...`);
 
-    // 2. Start Kafka consumer
+    // Create the message handler
+    messageHandler = await createMessageHandler(HANDLER_TYPE);
+    console.log(`✅ ${HANDLER_TYPE} handler initialized`);
+
+    // Start Kafka consumer
     console.log("🔧 Starting Kafka consumer...");
     await kafkaServiceConsumer.startConsumer(["user-events"], messageHandler);
-
-    await esInfo();
 
     console.log("✅ All services started successfully!");
   } catch (error) {
     console.error("❌ Failed to start services:", error);
-    await sqliteService.close(); // Cleanup on failure
     process.exit(1);
   }
 }
