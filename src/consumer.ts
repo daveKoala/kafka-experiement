@@ -2,18 +2,26 @@ import type { Request, Response } from "express";
 import app from "./app";
 import { KafkaService } from "./utils/kafka/KafkaService";
 import { kafkaConfig } from "./utils/kafka/configCommon";
-import { sqliteService } from "./utils/db";
+import { sqliteService } from "./utils/localDB/db";
 // import { messageHandler } from "./utils/consumers/writeToFile";
-import { sqliteMessageHandler as messageHandler } from "./utils/consumers/writeToDb";
+// import { sqliteMessageHandler as messageHandler } from "./utils/consumers/writeToDb";
+import { elasticSearchMessageHandler as messageHandler } from "./utils/consumers/elasticSearch";
+import { esInfo, esClient } from "./utils/elasticDB/db";
+
+// We need some sort of factory pattern here that starts kafka AND adds the desired message handler with connections etc
 
 // Singleton of Kafka Service Class
-const kafkaServiceConsumer = new KafkaService(kafkaConfig());
+const kafkaServiceConsumer = new KafkaService(
+  kafkaConfig(),
+  "log-processing-group"
+);
 
 // GRACEFUL SHUTDOWN - Include SQLite cleanup
 process.on("SIGINT", async () => {
-  console.log("🛑 Shutting down services...");
+  console.log("🛑 Shutting down services");
   await kafkaServiceConsumer.disconnect();
-  await sqliteService.close(); // ← Add SQLite cleanup
+  await sqliteService.close(); // Add SQLite cleanup
+  await esClient.close(); // Close Elastic search connection
   process.exit(0);
 });
 
@@ -22,6 +30,7 @@ process.on("SIGTERM", async () => {
   console.log("🛑 Received SIGTERM, shutting down services...");
   await kafkaServiceConsumer.disconnect();
   await sqliteService.close();
+  await esClient.close(); // Close Elastic search connection
   process.exit(0);
 });
 
@@ -35,6 +44,8 @@ async function startServices() {
     // 2. Start Kafka consumer
     console.log("🔧 Starting Kafka consumer...");
     await kafkaServiceConsumer.startConsumer(["user-events"], messageHandler);
+
+    await esInfo();
 
     console.log("✅ All services started successfully!");
   } catch (error) {

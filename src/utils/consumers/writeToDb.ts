@@ -1,5 +1,5 @@
 import type { MessageHandler } from "../kafka/types";
-import { sqliteService } from "../db";
+import { sqliteService } from "../localDB/db";
 
 export const sqliteMessageHandler: MessageHandler = async (msg) => {
   try {

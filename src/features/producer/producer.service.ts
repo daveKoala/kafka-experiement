@@ -4,7 +4,7 @@ import type { KafkaMessage } from "../../utils/kafka/types";
 import type { Request, Response } from "express";
 
 // Singleton of Kafka Service Class
-const kafkaService = new KafkaService(kafkaConfig());
+const kafkaService = new KafkaService(kafkaConfig(), "log-processing-group");
 
 // GRACEFUL SHUTDOWN
 process.on("SIGINT", async () => {
