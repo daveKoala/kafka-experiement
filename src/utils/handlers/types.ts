@@ -60,3 +60,16 @@ export interface HandlerStatus {
   /** Handler-specific status details (connection info, performance metrics, etc.) */
   details?: Record<string, any>;
 }
+
+/**
+ * Raw Kafka message structure as received
+ */
+export interface RawKafkaMessage {
+  topic: string;
+  partition: number;
+  offset: string;
+  timestamp: string;
+  key: string | null;
+  value: string | number;
+  headers: Record<string, any>;
+}

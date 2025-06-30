@@ -3,13 +3,14 @@ import type {
   MessageHandlerConfig,
   ProcessedMessage,
   HandlerStatus,
+  RawKafkaMessage,
 } from "./types";
 // @ts-expect-error
 import { DatabaseSync } from "node:sqlite";
 import path from "path";
 
 export class SqlHandler extends BaseMessageHandler {
-  private connectionString: string;
+  // private connectionString: string;
   private tableName: string;
   private db: DatabaseSync | null = null;
   private dbPath: string = "";
@@ -18,7 +19,7 @@ export class SqlHandler extends BaseMessageHandler {
 
   constructor(name: string, config: MessageHandlerConfig) {
     super(name, config);
-    this.connectionString = config.options?.connectionString || "";
+    // this.connectionString = config.options?.connectionString || "";
     this.tableName = config.options?.tableName || "kafka_messages";
   }
 
@@ -57,20 +58,19 @@ export class SqlHandler extends BaseMessageHandler {
     }
   }
 
-  async processSingle(message: ProcessedMessage): Promise<void> {
+  async safeProcessSingle(rawMessage: RawKafkaMessage): Promise<void> {
     if (!this.insertStmt) {
       throw new Error("Database not initialized - insertStmt is null");
     }
 
     try {
-      console.log({ message });
-      // Extract data from ProcessedMessage and map to SQL parameters
-      const topic = message.topic;
-      const partition = message.metadata?.partition || 0;
-      const offset = message.metadata?.offset?.toString() || message.id;
-      const messageKey = message.metadata?.key || null;
-      const messageValue = JSON.stringify(message.data);
-      const kafkaTimestamp = message.timestamp.toISOString();
+      // Now we can use the clean RawKafkaMessage interface
+      const topic = rawMessage.topic;
+      const partition = rawMessage.partition || 0;
+      const offset = rawMessage.offset?.toString();
+      const messageKey = rawMessage.key || null;
+      const messageValue = JSON.stringify(rawMessage.value);
+      const kafkaTimestamp = rawMessage.timestamp;
       const processedAt = new Date().toISOString();
 
       const result = this.insertStmt.run(
@@ -84,9 +84,13 @@ export class SqlHandler extends BaseMessageHandler {
       );
 
       if (result.changes > 0) {
-        console.log(`✅ Message inserted successfully: ${message.id}`);
+        console.log(
+          `✅ Message inserted successfully: ${rawMessage.partition}`
+        );
       } else {
-        console.log(`ℹ️  Message already exists (duplicate): ${message.id}`);
+        console.log(
+          `ℹ️  Message already exists (duplicate): ${rawMessage.partition}`
+        );
       }
     } catch (error) {
       console.error("❌ Error inserting message:", error);
@@ -109,9 +113,9 @@ export class SqlHandler extends BaseMessageHandler {
         for (const message of messages) {
           const topic = message.topic;
           const partition = message.metadata?.partition || 0;
-          const offset = message.metadata?.offset?.toString() || message.id;
+          const offset = message.metadata?.offset?.toString();
           const messageKey = message.metadata?.key || null;
-          const messageValue = JSON.stringify(message.data);
+          const messageValue = JSON.stringify(message);
           const kafkaTimestamp = message.timestamp.toISOString();
           const processedAt = new Date().toISOString();
 

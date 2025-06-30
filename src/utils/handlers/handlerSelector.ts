@@ -71,15 +71,7 @@ export async function createMessageHandler(handlerName: string) {
   await handler.initialize();
 
   // Return the actual function that Kafka will call
-  return async (topic: string, message: any, metadata?: any) => {
-    const processedMessage = {
-      id: `${topic}-${Date.now()}-${Math.random()}`,
-      topic,
-      data: message,
-      timestamp: new Date(),
-      metadata,
-    };
-
-    await handler.safeProcessSingle(processedMessage);
+  return async (topic: any) => {
+    await handler.safeProcessSingle(topic);
   };
 }

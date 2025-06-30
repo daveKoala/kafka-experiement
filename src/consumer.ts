@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+config();
+
 import { createMessageHandler } from "./utils/handlers/handlerSelector";
 import { KafkaService } from "./utils/kafka/KafkaService";
 import { kafkaConfig } from "./utils/kafka/configCommon";
