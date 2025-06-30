@@ -1,8 +1,11 @@
+import { config } from "dotenv";
+config();
+
+import app from "./app";
 import ProducerRouter from "./features/producer/producer.router";
 import type { Request, Response } from "express";
-import app from "./app";
 
-const PORT = 8081;
+const PORT = process.env.PRODUCER_PORT ?? 8080;
 
 app.use("/api", ProducerRouter);
 

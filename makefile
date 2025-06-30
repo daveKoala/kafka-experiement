@@ -91,7 +91,7 @@ list-topics-dev: ## List all Kafka topics (dev)
 
 # Testing
 test-produce: ## Send a test log message
-	curl -X POST http://localhost:8081/logs \
+	curl -X POST http://localhost:8081/api/demo \
 		-H "Content-Type: application/json" \
 		-d '{"level": "info", "message": "Test message from Makefile", "metadata": {"source": "makefile"}}'
 

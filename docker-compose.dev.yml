@@ -26,7 +26,8 @@ services:
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
       KAFKA_LOG_DIRS: '/var/lib/kafka/data'
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      # Note, that auto create might fail on the first post. There is a time delay of about 20 seconds before its ready/updated
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true' 
       # Cluster ID for KRaft mode
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
     volumes:

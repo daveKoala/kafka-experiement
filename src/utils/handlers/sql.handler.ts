@@ -63,6 +63,7 @@ export class SqlHandler extends BaseMessageHandler {
     }
 
     try {
+      console.log({ message });
       // Extract data from ProcessedMessage and map to SQL parameters
       const topic = message.topic;
       const partition = message.metadata?.partition || 0;
@@ -99,6 +100,7 @@ export class SqlHandler extends BaseMessageHandler {
     }
 
     try {
+      console.log({ messages });
       // Use a transaction for better performance
       const transaction = this.db.transaction(() => {
         let insertedCount = 0;

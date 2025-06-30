@@ -4,7 +4,10 @@ import type { KafkaMessage } from "../../utils/kafka/types";
 import type { Request, Response } from "express";
 
 // Singleton of Kafka Service Class
-const kafkaService = new KafkaService(kafkaConfig(), "log-processing-group");
+const kafkaService = new KafkaService(
+  kafkaConfig(),
+  process.env.CONSUMER_GROUP_NAME ?? "log-default-group"
+);
 
 // GRACEFUL SHUTDOWN
 process.on("SIGINT", async () => {
@@ -81,8 +84,12 @@ export const batchSend = async (
 ): Promise<void> => {
   try {
     const messages = req.body;
-
     const validMessages: KafkaMessage[] = [];
+    const errors: Array<{
+      topic?: string;
+      error: string;
+      messageIndex?: number;
+    }> = [];
 
     // Validation: Check if messages is an array
     if (!Array.isArray(messages)) {
@@ -103,33 +110,166 @@ export const batchSend = async (
     // Group messages by topic for efficient sending
     const messagesByTopic: Record<string, KafkaMessage[]> = {};
 
-    // @ts-expect-error
-    messages.forEach((msg) => {
-      const topic = (msg as any).topic; // We know it has topic from validation
-      if (!messagesByTopic[topic]) {
-        messagesByTopic[topic] = [];
-      }
+    // Validate each message and group by topic
+    messages.forEach((msg: any, index: number) => {
+      try {
+        // Add message validation here
+        if (!msg.topic) {
+          errors.push({
+            error: `Message at index ${index} missing required 'topic' field`,
+            messageIndex: index,
+          });
+          return;
+        }
 
-      messagesByTopic[topic].push({
-        key: msg.key,
-        value: msg.value,
-        headers: msg.headers,
-      });
+        if (!msg.value) {
+          errors.push({
+            topic: msg.topic,
+            error: `Message at index ${index} missing required 'value' field`,
+            messageIndex: index,
+          });
+          return;
+        }
+
+        const topic = msg.topic;
+        if (!messagesByTopic[topic]) {
+          messagesByTopic[topic] = [];
+        }
+
+        messagesByTopic[topic].push({
+          key: msg.key,
+          value: msg.value,
+          headers: msg.headers,
+        });
+
+        validMessages.push(msg);
+      } catch (validationError) {
+        errors.push({
+          error: `Validation error for message at index ${index}: ${
+            validationError instanceof Error
+              ? validationError.message
+              : "Unknown validation error"
+          }`,
+          messageIndex: index,
+        });
+      }
     });
 
-    const results = await Promise.all(
-      Object.entries(messagesByTopic).map(sendToTopic)
+    // If we have validation errors, return them before attempting to send
+    if (errors.length > 0 && validMessages.length === 0) {
+      resp.status(400).json({
+        success: false,
+        error: "All messages failed validation",
+        errors,
+        totalMessages: messages.length,
+        validMessages: 0,
+      });
+    }
+
+    // Send messages to Kafka with enhanced error handling
+    const results = await Promise.allSettled(
+      Object.entries(messagesByTopic).map(async ([topic, topicMessages]) => {
+        try {
+          const result = await sendToTopic([topic, topicMessages]);
+          return {
+            topic,
+            success: true,
+            messageCount: topicMessages.length,
+            result,
+          };
+        } catch (kafkaError) {
+          // Capture specific Kafka errors
+          const errorMessage =
+            kafkaError instanceof Error
+              ? kafkaError.message
+              : "Unknown Kafka error";
+
+          // Log the error for debugging (you might want to use your logging system here)
+          console.error(`Kafka send error for topic ${topic}:`, {
+            error: errorMessage,
+            topic,
+            messageCount: topicMessages.length,
+            timestamp: new Date().toISOString(),
+          });
+
+          errors.push({
+            topic,
+            error: `Failed to send to topic '${topic}': ${errorMessage}`,
+          });
+
+          return {
+            topic,
+            success: false,
+            error: errorMessage,
+            messageCount: topicMessages.length,
+          };
+        }
+      })
     );
 
-    // Need to catch and bad requests to broker. E.g.
-    // {"level":"ERROR","timestamp":"2025-06-29T04:37:48.530Z","logger":"kafkajs","message":"[Connection] Response Metadata(key: 3, version: 6)","broker":"localhost:9092","clientId":"my-awesome-app","error":"The request attempted to perform an operation on an invalid topic","correlationId":25,"size":209}
+    // Process results and separate successful from failed sends
+    const successfulSends = results
+      .filter(
+        (result): result is PromiseFulfilledResult<any> =>
+          result.status === "fulfilled" && result.value.success
+      )
+      .map((result) => result.value);
 
-    resp
-      .status(200)
-      .json({ messagesByTopic, validMessages, messages, results });
+    const failedSends = results
+      .filter(
+        (result) =>
+          result.status === "rejected" ||
+          (result.status === "fulfilled" && !result.value.success)
+      )
+      .map((result) => {
+        if (result.status === "rejected") {
+          return {
+            error: result.reason?.message || "Unknown rejection reason",
+          };
+        } else {
+          return result.value;
+        }
+      });
+
+    // Determine response status based on results
+    const hasErrors = errors.length > 0 || failedSends.length > 0;
+    const hasSuccesses = successfulSends.length > 0;
+
+    let statusCode = 200;
+    if (hasErrors && !hasSuccesses) {
+      statusCode = 500; // All failed
+    } else if (hasErrors && hasSuccesses) {
+      statusCode = 207; // Partial success (Multi-Status)
+    }
+
+    const response = {
+      success: !hasErrors,
+      totalMessages: messages.length,
+      validMessages: validMessages.length,
+      successfulTopics: successfulSends.length,
+      failedTopics: failedSends.length,
+      ...(successfulSends.length > 0 && { successfulSends }),
+      ...(failedSends.length > 0 && { failedSends }),
+      ...(errors.length > 0 && { validationErrors: errors }),
+    };
+
+    resp.status(statusCode).json(response);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error: `batch send`";
-    resp.status(400).json({ message });
+    // Catch-all for unexpected errors
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error in batch send";
+
+    // Log the unexpected error
+    console.error("Unexpected error in batchSend:", {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
+
+    resp.status(500).json({
+      success: false,
+      error: "Internal server error during batch send",
+      message: errorMessage,
+    });
   }
 };

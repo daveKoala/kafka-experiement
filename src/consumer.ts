@@ -4,15 +4,15 @@ import { kafkaConfig } from "./utils/kafka/configCommon";
 import type { Request, Response } from "express";
 import app from "./app";
 
-// We need some sort of factory pattern here that starts kafka AND adds the desired message handler with connections etc
+const PORT = process.env.CONSUMER_PORT ?? 8082;
 
 // Singleton of Kafka Service Class
 const kafkaServiceConsumer = new KafkaService(
   kafkaConfig(),
-  "log-processing-group"
+  process.env.CONSUMER_GROUP_NAME ?? "dave-rocks"
 );
 
-const HANDLER_TYPE = process.env.MESSAGE_HANDLER || "sqlite";
+const HANDLER_TYPE = process.env.CONSUMER_MESSAGE_HANDLER || "sqlite";
 
 let messageHandler: any = null;
 
@@ -61,17 +61,13 @@ async function startServices() {
   }
 }
 
-const PORT = 8082;
-
 // Add some useful endpoints
 app.get("/health", (_req: Request, res: Response) => {
   try {
-    const dbInitialized = sqliteService.isInitialized();
     res.json({
       status: "ok",
       timestamp: new Date().toISOString(),
       services: {
-        sqlite: dbInitialized ? "connected" : "disconnected",
         kafka: kafkaServiceConsumer.getStatus(),
       },
     });
@@ -80,27 +76,6 @@ app.get("/health", (_req: Request, res: Response) => {
       status: "error",
       error: "Health check failed",
     });
-  }
-});
-
-app.get("/stats", (_req: Request, res: Response) => {
-  try {
-    if (!sqliteService.isInitialized()) {
-      return res.status(503).json({ error: "Database not initialized" });
-    }
-
-    const stats = sqliteService.getMessageCountByTopic();
-    const recentMessages = sqliteService.getRecentMessages(5);
-    res.json({
-      messageCountByTopic: stats,
-      recentMessages: recentMessages.map((msg) => ({
-        ...msg,
-        message_value: JSON.parse(msg.message_value), // Parse JSON for display
-      })),
-    });
-  } catch (error) {
-    console.error("Stats endpoint error:", error);
-    res.status(500).json({ error: "Failed to get stats" });
   }
 });
 
@@ -118,6 +93,3 @@ app.listen(PORT, async () => {
   // Start services after Express is ready
   await startServices();
 });
-
-// Remove this extra line
-// app.listen; ← Delete this
