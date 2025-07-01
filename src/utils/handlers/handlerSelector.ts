@@ -74,6 +74,6 @@ export async function createMessageHandler(handlerName: MessageHandlerTypes) {
 
   // Return the actual function that Kafka will call
   return async (topic: any) => {
-    await handler.safeProcessSingle(topic);
+    await handler.messageHandler(topic);
   };
 }

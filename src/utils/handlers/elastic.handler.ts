@@ -24,7 +24,7 @@ export class ElasticHandler extends BaseMessageHandler {
     console.log(`ElasticHandler initialized for index: ${this.indexName}`);
   }
 
-  async safeProcessSingle(message: RawKafkaMessage): Promise<void> {
+  async messageHandler(message: RawKafkaMessage): Promise<void> {
     try {
       console.log(
         `Indexing to Elasticsearch: ${this.indexName}`,

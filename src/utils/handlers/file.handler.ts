@@ -22,7 +22,7 @@ export class FileHandler extends BaseMessageHandler {
     console.log(`FileHandler initialized: ${this.filePath}`);
   }
 
-  async processSingle(message: RawKafkaMessage): Promise<void> {
+  async messageHandler(message: RawKafkaMessage): Promise<void> {
     console.log({ single: message });
     const logEntry = `${message.timestamp} [${message.topic}] ${JSON.stringify(
       message.value

@@ -44,9 +44,12 @@ export abstract class BaseMessageHandler {
   }
 
   // Main entry point - takes raw Kafka data and transforms it
-  async safeProcessSingle(message: RawKafkaMessage): Promise<void> {
+  async messageHandler(message: RawKafkaMessage): Promise<void> {
     try {
-      console.log(message);
+      console.log(
+        `🛑 ${this.name} handler has not implemented the "messageHandler" message`
+      );
+      console.log({ message });
     } catch (error) {
       console.error(`Handler ${this.name} failed to process message:`, error);
       this.updateStats(false);

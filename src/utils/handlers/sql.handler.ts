@@ -57,7 +57,7 @@ export class SqlHandler extends BaseMessageHandler {
     }
   }
 
-  async safeProcessSingle(rawMessage: RawKafkaMessage): Promise<void> {
+  async messageHandler(rawMessage: RawKafkaMessage): Promise<void> {
     if (!this.insertStmt) {
       throw new Error("Database not initialized - insertStmt is null");
     }
