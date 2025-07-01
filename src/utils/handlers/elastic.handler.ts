@@ -1,7 +1,7 @@
 import { BaseMessageHandler } from "./BaseMessageHandler";
 import type {
   MessageHandlerConfig,
-  ProcessedMessage,
+  RawKafkaMessage,
   HandlerStatus,
 } from "./types";
 
@@ -24,24 +24,43 @@ export class ElasticHandler extends BaseMessageHandler {
     console.log(`ElasticHandler initialized for index: ${this.indexName}`);
   }
 
-  async processSingle(message: ProcessedMessage): Promise<void> {
-    // Simulate Elasticsearch indexing
-    console.log(`Indexing to Elasticsearch: ${this.indexName}`, message.id);
-    await this.client.index({
-      index: this.indexName,
-      id: message.id,
-      body: message,
-    });
-  }
+  async safeProcessSingle(message: RawKafkaMessage): Promise<void> {
+    try {
+      console.log(
+        `Indexing to Elasticsearch: ${this.indexName}`,
+        message?.partition
+      );
 
-  async processBatch(messages: ProcessedMessage[]): Promise<void> {
-    // Simulate bulk indexing
-    console.log(`Bulk indexing ${messages.length} messages to Elasticsearch`);
-    // const body = messages.flatMap(msg => [
-    //   { index: { _index: this.indexName, _id: msg.id } },
-    //   msg
-    // ]);
-    // await this.client.bulk({ body });
+      let parsedValue;
+      try {
+        parsedValue = JSON.parse(message.value as string);
+      } catch {
+        parsedValue = message.value; // Keep as string if not valid JSON
+      }
+
+      // Simple flat document - no complex parsing FFS!
+      const document = {
+        topic: message.topic, // Direct access, no nesting
+        partition: message.partition, // Direct access
+        offset: message.offset, // Direct access
+        messageKey: message.key, // Direct access
+        messageValue: message.value, // Direct access - already string or number
+        timestamp: message.timestamp, // Direct access
+        headers: message.headers, // Direct access
+      };
+
+      await this.client.index({
+        index: this.indexName,
+        id: message?.offset || Date.now(),
+        body: document,
+      });
+
+      this.updateStats(true);
+    } catch (error) {
+      console.error("❌ Error indexing to Elasticsearch:", error);
+      this.updateStats(false);
+      throw error;
+    }
   }
 
   async getStatus(): Promise<HandlerStatus> {

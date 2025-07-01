@@ -17,8 +17,6 @@ export abstract class BaseMessageHandler {
   }
 
   // Abstract methods that must be implemented
-  // abstract processBatch(messages: ProcessedMessage[]): Promise<void>;
-  // abstract processSingle(message: ProcessedMessage): Promise<void>;
   abstract getStatus(): Promise<HandlerStatus>;
   abstract initialize(): Promise<void>;
   abstract cleanup(): Promise<void>;
@@ -52,18 +50,6 @@ export abstract class BaseMessageHandler {
     } catch (error) {
       console.error(`Handler ${this.name} failed to process message:`, error);
       this.updateStats(false);
-      throw error;
-    }
-  }
-
-  async safeProcessBatch(
-    messages: Array<{ topic: string; message: any; metadata?: any }>
-  ): Promise<void> {
-    try {
-      console.log({ messages });
-    } catch (error) {
-      console.error(`Handler ${this.name} failed to process batch:`, error);
-      this.updateStats(false, messages.length);
       throw error;
     }
   }

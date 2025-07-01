@@ -6,7 +6,7 @@ import type { Request, Response } from "express";
 // Singleton of Kafka Service Class
 const kafkaService = new KafkaService(
   kafkaConfig(),
-  process.env.CONSUMER_GROUP_NAME ?? "log-default-group"
+  process.env.CONSUMER_GROUP_NAME ?? "dave-rocks"
 );
 
 // GRACEFUL SHUTDOWN

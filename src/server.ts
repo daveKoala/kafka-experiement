@@ -1,6 +1,3 @@
-import { config } from "dotenv";
-config();
-
 import app from "./app";
 import ProducerRouter from "./features/producer/producer.router";
 import type { Request, Response } from "express";

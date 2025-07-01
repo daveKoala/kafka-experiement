@@ -1,7 +1,6 @@
 import { BaseMessageHandler } from "./BaseMessageHandler";
 import type {
   MessageHandlerConfig,
-  ProcessedMessage,
   HandlerStatus,
   RawKafkaMessage,
 } from "./types";
@@ -95,57 +94,6 @@ export class SqlHandler extends BaseMessageHandler {
     } catch (error) {
       console.error("❌ Error inserting message:", error);
       throw error; // Re-throw to let the base handler track errors
-    }
-  }
-
-  async processBatch(messages: ProcessedMessage[]): Promise<void> {
-    if (!this.db || !this.batchInsertStmt) {
-      throw new Error("Database not initialized");
-    }
-
-    try {
-      console.log({ messages });
-      // Use a transaction for better performance
-      const transaction = this.db.transaction(() => {
-        let insertedCount = 0;
-        let duplicateCount = 0;
-
-        for (const message of messages) {
-          const topic = message.topic;
-          const partition = message.metadata?.partition || 0;
-          const offset = message.metadata?.offset?.toString();
-          const messageKey = message.metadata?.key || null;
-          const messageValue = JSON.stringify(message);
-          const kafkaTimestamp = message.timestamp.toISOString();
-          const processedAt = new Date().toISOString();
-
-          const result = this.batchInsertStmt.run(
-            topic,
-            partition,
-            offset,
-            messageKey,
-            messageValue,
-            kafkaTimestamp,
-            processedAt
-          );
-
-          if (result.changes > 0) {
-            insertedCount++;
-          } else {
-            duplicateCount++;
-          }
-        }
-
-        return { insertedCount, duplicateCount };
-      });
-
-      const result = transaction();
-      console.log(
-        `✅ Batch insert completed: ${result.insertedCount} inserted, ${result.duplicateCount} duplicates`
-      );
-    } catch (error) {
-      console.error("❌ Error in batch insert:", error);
-      throw error;
     }
   }
 

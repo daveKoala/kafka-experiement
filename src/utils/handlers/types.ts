@@ -73,3 +73,10 @@ export interface RawKafkaMessage {
   value: string | number;
   headers: Record<string, any>;
 }
+
+export type MessageHandlerTypes =
+  | "file"
+  | "sql"
+  | "sqlite"
+  | "elastic"
+  | "elasticsearch";

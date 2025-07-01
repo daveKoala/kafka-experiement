@@ -1,7 +1,7 @@
 import { BaseMessageHandler } from "./BaseMessageHandler";
 import type {
   MessageHandlerConfig,
-  ProcessedMessage,
+  RawKafkaMessage,
   HandlerStatus,
 } from "./types";
 import fs from "fs/promises";
@@ -12,7 +12,7 @@ export class FileHandler extends BaseMessageHandler {
 
   constructor(name: string, config: MessageHandlerConfig) {
     super(name, config);
-    this.filePath = config.options?.filePath || "./logs/kafka-messages.log";
+    this.filePath = config.options?.filePath || "./logs/kafka-dac-messages.log";
   }
 
   async initialize(): Promise<void> {
@@ -22,27 +22,12 @@ export class FileHandler extends BaseMessageHandler {
     console.log(`FileHandler initialized: ${this.filePath}`);
   }
 
-  async processSingle(message: ProcessedMessage): Promise<void> {
+  async processSingle(message: RawKafkaMessage): Promise<void> {
     console.log({ single: message });
-    const logEntry = `${message.timestamp.toISOString()} [${
-      message.topic
-    }] ${JSON.stringify(message.data)}\n`;
+    const logEntry = `${message.timestamp} [${message.topic}] ${JSON.stringify(
+      message.value
+    )}\n`;
     await fs.appendFile(this.filePath, logEntry);
-  }
-
-  async processBatch(messages: ProcessedMessage[]): Promise<void> {
-    console.log({ batch: messages });
-    const logEntries =
-      messages
-        .map(
-          (msg) =>
-            `${msg.timestamp.toISOString()} [${msg.topic}] ${JSON.stringify(
-              msg.data
-            )}`
-        )
-        .join("\n") + "\n";
-
-    await fs.appendFile(this.filePath, logEntries);
   }
 
   async getStatus(): Promise<HandlerStatus> {

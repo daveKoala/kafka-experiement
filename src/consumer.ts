@@ -1,11 +1,9 @@
-import { config } from "dotenv";
-config();
-
 import { createMessageHandler } from "./utils/handlers/handlerSelector";
 import { KafkaService } from "./utils/kafka/KafkaService";
 import { kafkaConfig } from "./utils/kafka/configCommon";
 import type { Request, Response } from "express";
 import app from "./app";
+import { MessageHandlerTypes } from "./utils/handlers/types";
 
 const PORT = process.env.CONSUMER_PORT ?? 8082;
 
@@ -15,8 +13,11 @@ const kafkaServiceConsumer = new KafkaService(
   process.env.CONSUMER_GROUP_NAME ?? "dave-rocks"
 );
 
-const HANDLER_TYPE = process.env.CONSUMER_MESSAGE_HANDLER || "sqlite";
+// Not ideal, I know
+const HANDLER_TYPE: MessageHandlerTypes =
+  (process.env.CONSUMER_MESSAGE_HANDLER as MessageHandlerTypes) || "sqlite";
 
+console.log({ HANDLER_TYPE });
 let messageHandler: any = null;
 
 // GRACEFUL SHUTDOWN - Include SQLite cleanup
@@ -55,7 +56,15 @@ async function startServices() {
 
     // Start Kafka consumer
     console.log("🔧 Starting Kafka consumer...");
-    await kafkaServiceConsumer.startConsumer(["user-events"], messageHandler);
+    const topics = (process.env.KAFKA_TOPICS_CSV ?? "")
+      .split(",")
+      .map((str: string) => str.trim())
+      .filter((topic) => topic.length > 0);
+
+    if (topics.length < 1) {
+      throw new Error("No topics to subscribe to");
+    }
+    await kafkaServiceConsumer.startConsumer(topics, messageHandler);
 
     console.log("✅ All services started successfully!");
   } catch (error) {

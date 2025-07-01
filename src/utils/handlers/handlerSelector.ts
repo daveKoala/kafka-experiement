@@ -1,13 +1,15 @@
 import { BaseMessageHandler } from "./BaseMessageHandler";
 import { ElasticHandler } from "./elastic.handler";
-import { MessageHandlerConfig } from "./types";
+import { MessageHandlerConfig, MessageHandlerTypes } from "./types";
 import { FileHandler } from "./file.handler";
 import { SqlHandler } from "./sql.handler";
 
 /**
  * Simple function to get a handler based on name
  */
-export function getHandler(handlerName: string): BaseMessageHandler {
+export function getHandler(
+  handlerName: MessageHandlerTypes
+): BaseMessageHandler {
   const config: MessageHandlerConfig = {
     type: handlerName as any,
     enabled: true,
@@ -40,7 +42,7 @@ function getHandlerOptions(handlerName: string): Record<string, any> {
   switch (handlerName) {
     case "file":
       return {
-        filePath: process.env.LOG_FILE_PATH || "./logs/kafka-processed.log",
+        filePath: process.env.LOG_FILE_PATH || "./logs/kafka-dac-processed.log",
       };
 
     case "sql":
@@ -66,7 +68,7 @@ function getHandlerOptions(handlerName: string): Record<string, any> {
 /**
  * Create a message handler function that can be passed to Kafka
  */
-export async function createMessageHandler(handlerName: string) {
+export async function createMessageHandler(handlerName: MessageHandlerTypes) {
   const handler = getHandler(handlerName);
   await handler.initialize();
 
