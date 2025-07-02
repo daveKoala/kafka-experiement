@@ -41,7 +41,7 @@ A modern streaming data pipeline using Apache Kafka in KRaft mode (no ZooKeeper)
 
 ```bash
 # Start everything
-make up
+make dev-infra
 
 # Check status
 make status
@@ -83,10 +83,6 @@ cp .env.example .env
 
 # Start development servers
 npm run dev
-
-# Or run individual services
-npm run dev:api      # API server with hot reload
-npm run dev:consumer # Consumer with hot reload
 ```
 
 ## 🔧 Configuration
@@ -98,13 +94,6 @@ Create a `.env` file from `.env.example`:
 ```bash
 cp .env.example .env
 ```
-
-Key configuration options:
-
-- `KAFKA_BROKERS`: Kafka broker addresses
-- `PORT`: API server port
-- `LOG_LEVEL`: Logging level (debug, info, warn, error)
-- `CONSUMER_GROUP_ID`: Kafka consumer group ID
 
 ### Kafka Topics
 
@@ -128,7 +117,7 @@ The system uses three main topics:
 
 ```bash
 # Send a log message
-curl -X POST http://localhost:3000/logs \
+curl -X POST http://localhost:<PORT>/logs \
   -H "Content-Type: application/json" \
   -d '{
     "level": "info",
@@ -137,7 +126,7 @@ curl -X POST http://localhost:3000/logs \
   }'
 
 # Send a metric
-curl -X POST http://localhost:3000/metrics \
+curl -X POST http://localhost:<PORT>/metrics \
   -H "Content-Type: application/json" \
   -d '{
     "name": "response_time",
@@ -172,44 +161,16 @@ curl http://localhost:3000/health  # Producer API
 docker-compose ps                  # Container status
 ```
 
-## 🏗️ Development
-
-### Building
-
-```bash
-# Build TypeScript
-npm run build
-
-# Build Docker images
-make build
-# or
-docker-compose build
-```
-
-### Code Quality
-
-```bash
-# Lint code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Run tests
-npm run test
-```
-
 ### Project Structure
 
 ```
 ├── src/
 │   ├── api.ts           # Express API server
 │   ├── consumer.ts      # Kafka consumer
-│   ├── producer.ts      # Kafka producer
-│   ├── cli-producer.ts  # CLI tool
-│   └── config/          # Configuration files
+│   ├── server.ts        # Kafka producer
 ├── dist/                # Compiled JavaScript
 ├── logs/                # Application logs
+├── docker-compose.dev.yml   # Service orchestration
 ├── docker-compose.yml   # Service orchestration
 ├── Dockerfile.*         # Container definitions
 ├── tsconfig.json        # TypeScript configuration
@@ -264,20 +225,6 @@ make clean-all
 make up
 ```
 
-### Debug Mode
-
-Enable debug logging:
-
-```bash
-# Set in .env file
-LOG_LEVEL=debug
-
-# Or via environment variable
-LOG_LEVEL=debug docker-compose up
-```
-
-## 📊 Performance Tuning
-
 ### Kafka Settings
 
 Key performance settings in docker-compose.yml:
@@ -293,17 +240,3 @@ To scale consumers:
 ```bash
 docker-compose up --scale consumer=3
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
-# kafka-experiement
