@@ -14,10 +14,12 @@ This project demonstrates how to use Apache Kafka for real-time message streamin
 
 ## Getting up and running in local developer mode
 
+Copy and rename `./.env_local` to `.env`
+
 ### Step 1: Get the Kafka broker(s) and UI containers running
 
 ```bash
-make up
+make dev-infra
 ```
 
 **Note:** This can take a minute, so be patient. It's downloading and starting Docker containers for Kafka and its dependencies.
@@ -76,6 +78,8 @@ You can see the topics either in the UI (http://localhost:8080/) or via command 
 make list-topics-dev
 ```
 
+It might take a minute for the topics to be instantiated
+
 ### Messages
 
 **What are messages?** A message is just a JSON object sent to Kafka. There's no fixed structure (though you can add schema validation later).
@@ -110,10 +114,17 @@ This sends several test messages to different topics.
 When you ran `npm run dev`, a consumer was automatically created and started. What's it doing?
 
 - Streaming messages from topics in real-time
-- Processing each message (in our case, writing to `./logs/combined.log`)
+- Processing each message (in our case, writing to files, SQLite or Elastic Search)
 - In a real-world scenario, it might validate data and update a database
 
 **Check the consumer in action:** Look at `./logs/combined.log` - you should see the test messages appearing there.
+
+---
+
+## GUI
+
+- KafkaUI: http://localhost:8080/
+- Elastic: http://localhost:5601/
 
 ---
 
@@ -146,7 +157,7 @@ When you ran `npm run dev`, a consumer was automatically created and started. Wh
 
 ```bash
 # Start Kafka infrastructure
-make up
+make dev-infra
 
 # Check status
 make status
