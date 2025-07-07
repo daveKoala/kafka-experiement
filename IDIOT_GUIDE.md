@@ -125,6 +125,7 @@ When you ran `npm run dev`, a consumer was automatically created and started. Wh
 
 - KafkaUI: http://localhost:8080/
 - Elastic: http://localhost:5601/
+- Flink Web UI: http://localhost:8081
 
 ---
 

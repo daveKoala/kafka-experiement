@@ -113,6 +113,87 @@ services:
       retries: 5
       start_period: 60s
 
+# # Apache Flink JobManager
+#   flink-jobmanager:
+#     image: flink:1.18.1
+#     container_name: flink-jobmanager-dev
+#     ports:
+#       - "8081:8081"
+#     environment:
+#       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+#     volumes:
+#       - flink-data:/tmp/flink-data
+#     command: jobmanager
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8081/overview"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+#       start_period: 60s
+
+  # # Apache Flink TaskManager
+  # flink-taskmanager:
+  #   image: flink:1.18.1
+  #   container_name: flink-taskmanager-dev
+  #   depends_on:
+  #     flink-jobmanager:
+  #       condition: service_healthy
+  #   environment:
+  #     - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+  #   volumes:
+  #     - flink-data:/tmp/flink-data
+  #   command: taskmanager
+
+  # # Optional: Flink SQL Client (for interactive SQL queries)
+  # flink-sql-client:
+  #   image: flink:1.18.1
+  #   container_name: flink-sql-client-dev
+  #   depends_on:
+  #     flink-jobmanager:
+  #       condition: service_healthy
+  #   environment:
+  #     - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+  #   volumes:
+  #     - flink-data:/tmp/flink-data
+  #     - ./flink-sql:/opt/flink/sql-scripts  # Mount local SQL scripts
+  #   command: /bin/bash
+  #   stdin_open: true
+  #   tty: true
+  #   profiles:
+  #     - sql-client  # Use profile to make this optional
+  
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    # networks:
+    #   - kafka-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-ui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin
+    depends_on:
+      - redis
+    # networks:
+    #   - kafka-network
 volumes:
   kafka-dev-data:
   elasticsearch-data:
+  flink-data:
+  redis_data:
+    driver: local

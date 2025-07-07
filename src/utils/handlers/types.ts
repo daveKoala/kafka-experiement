@@ -16,6 +16,8 @@ export interface MessageHandlerConfig {
 
   /** Handler-specific configuration options (e.g., connection strings, file paths, URLs) */
   options?: Record<string, any>;
+
+  topics?: string[];
 }
 
 /**
@@ -59,6 +61,8 @@ export interface HandlerStatus {
 
   /** Handler-specific status details (connection info, performance metrics, etc.) */
   details?: Record<string, any>;
+
+  metadata?: any;
 }
 
 /**
@@ -70,7 +74,7 @@ export interface RawKafkaMessage {
   offset: string;
   timestamp: string;
   key: string | null;
-  value: string | number;
+  value: string;
   headers: Record<string, any>;
 }
 
@@ -79,4 +83,6 @@ export type MessageHandlerTypes =
   | "sql"
   | "sqlite"
   | "elastic"
-  | "elasticsearch";
+  | "elasticsearch"
+  | "flink"
+  | "redis";

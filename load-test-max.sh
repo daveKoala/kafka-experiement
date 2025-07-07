@@ -3,7 +3,7 @@
 # Kafka Load Test Script
 # Runs the batch API call 1000 times as quickly as possible
 
-URL="localhost:8081/api/batch"
+URL="localhost:8083/api/send"
 CONTENT_TYPE="Content-Type: application/json"
 PAYLOAD='[{"topic":"user-events","key":"user-123","value":{"action":"login","timestamp":"2025-06-27T10:30:00Z"},"headers":{"source":"web-app"}},{"topic":"application-metrics","key":"metric-456","value":{"name":"page_view","count":1}}]'
 

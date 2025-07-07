@@ -1,8 +1,10 @@
+import { MessageHandlerConfig, MessageHandlerTypes } from "./types";
 import { BaseMessageHandler } from "./BaseMessageHandler";
 import { ElasticHandler } from "./elastic.handler";
-import { MessageHandlerConfig, MessageHandlerTypes } from "./types";
+import { FlinkHandler } from "./flink.handler";
 import { FileHandler } from "./file.handler";
 import { SqlHandler } from "./sql.handler";
+import { RedisHandler } from "./redis.handler";
 
 /**
  * Simple function to get a handler based on name
@@ -27,6 +29,12 @@ export function getHandler(
     case "elastic":
     case "elasticsearch":
       return new ElasticHandler("elasticHandler", config);
+
+    case "flink":
+      return new FlinkHandler("flinkHandler", config);
+
+    case "redis":
+      return new RedisHandler("redisHandler", config);
 
     default:
       throw new Error(
@@ -54,10 +62,32 @@ function getHandlerOptions(handlerName: string): Record<string, any> {
     case "elastic":
     case "elasticsearch":
       return {
-        url: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
+        url: process.env.ELASTICSEARCH_URL || "redis://localhost:6379",
         indexName: process.env.ES_INDEX_NAME || "kafka-messages",
         maxBulkSize: parseInt(process.env.ES_BATCH_SIZE || "1000"),
         flushInterval: parseInt(process.env.ES_FLUSH_INTERVAL || "2000"),
+      };
+
+    case "flink":
+      return {
+        type: "flink",
+        enabled: true,
+        topics: ["user-logs", "error-logs", "user-events", "apple-pie"],
+        options: {
+          flinkUrl: "http://localhost:8081",
+        },
+      };
+
+    case "redis":
+      return {
+        type: "redis",
+        enabled: true,
+        options: {
+          redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
+          redisKeyPrefix: process.env.REDIS_KEY_PREFIX || "kafka_messages",
+          batchSize: parseInt(process.env.REDIS_BATCH_SIZE || "100"),
+          flushInterval: parseInt(process.env.REDIS_FLUSH_INTERVAL || "5000"),
+        },
       };
 
     default:
